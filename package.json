@@ -1,0 +1,92 @@
+{
+  "name": "cryptowallet-ts",
+  "description": "CryptoWallet-ts.",
+  "version": "0.0.1",
+  "author": {
+    "name": "James Kirkby",
+    "email": "nshcore@protonmail.ch"
+  },
+  "bugs": {
+    "url": "https://github.com/nshcore/cryptowallet-ts/issues"
+  },
+  "dependencies": {
+    "axios": "^0.18.1",
+    "bip39": "^2.5.0",
+    "bitcoinjs-lib": "^4.0.2",
+    "coinselect": "^3.1.11",
+    "dotenv": "^7.0.0",
+    "dotenv-webpack": "^1.7.0",
+    "ethereumjs-tx": "^1.3.7",
+    "ethereumjs-wallet": "^0.6.2",
+    "hdkey": "^1.1.0",
+    "web3": "^1.0.0-beta.54",
+    "wif": "^2.0.6"
+  },
+  "devDependencies": {
+    "@types/axios": "^0.14.0",
+    "@types/bip39": "^2.4.2",
+    "@types/bitcoinjs-lib": "^4.0.0",
+    "@types/jest": "^24.0.6",
+    "@types/lodash": "^4.14.117",
+    "@types/lodash-es": "^4.17.1",
+    "@types/node": "^10.10.3",
+    "@types/power-assert": "^1.5.0",
+    "conventional-changelog": "^3.0.6",
+    "conventional-github-releaser": "^3.1.2",
+    "cross-env": "^5.1.6",
+    "eslint": "^5.9.0",
+    "eslint-config-airbnb-base": "^13.1.0",
+    "eslint-import-resolver-typescript": "^1.1.1",
+    "eslint-loader": "^2.1.0",
+    "eslint-plugin-header": "^3.0.0",
+    "eslint-plugin-import": "^2.16.0",
+    "eslint-plugin-typescript": "^0.12.0",
+    "fork-ts-checker-webpack-plugin": "^0.4.9",
+    "jest": "^24.1.0",
+    "power-assert": "^1.6.0",
+    "ts-jest": "^23.10.5",
+    "ts-loader": "^5.2.0",
+    "ts-node": "^7.0.1",
+    "typescript": "^3.0.3",
+    "typescript-eslint-parser": "^18.0.0",
+    "webpack": "^4.19.1",
+    "webpack-bundle-analyzer": "^3.3.2",
+    "webpack-cli": "^3.1.1"
+  },
+  "files": [
+    "dist/cryptowallet-js.js",
+    "dist/cryptowallet-js.min.js",
+    "dist/cryptowallet-js.common.js",
+    "dist/cryptowallet-js.esm.js",
+    "types",
+    "src",
+    "lib"
+  ],
+  "homepage": "https://github.com/nshcore/cryptowallet-ts#readme",
+  "main": "dist/cryptowallet-js.js",
+  "module": "lib/src",
+  "types": "types/index.d.ts",
+  "keywords": [
+    "plugin"
+  ],
+  "license": "GPLv2",
+  "engines": {
+    "node": ">= 8.15"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nshcore/cryptowallet-ts.git"
+  },
+  "scripts": {
+    "build": "npm run build:ts && webpack",
+    "build:ts": "tsc -p src",
+    "build:ts:watch": "tsc -p src --watch",
+    "changelog": "conventional-changelog -i CHANGELOG.md -s -p eslint",
+    "release": "conventional-github-releaser -p eslint",
+    "clean": "rm -rf coverage && rm -rf lib/*.js* && rm -rf types/*.d.ts* && rm -rf dist/*.js* && rm -rf ./*.log",
+    "lint": "eslint --fix --ext .ts src",
+    "test": "npm run test:unit",
+    "test:unit": "cross-env NODE_ENV=test jest",
+    "test:unit:watch": "cross-env NODE_ENV=test jest --watch"
+  }
+}

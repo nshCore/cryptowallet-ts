@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES5",
+    "module": "ES2015",
+    "strict": true,
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": ".",
+    "lib": [
+      "dom",
+      "es5"
+    ],
+    "types": [
+      "node",
+      "jest",
+    ]
+  },
+  "exclude": [
+    "node_modules"
+  ]
+}
