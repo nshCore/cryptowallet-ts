@@ -1,4 +1,3 @@
-
 ///<reference path="./../types/module.d.ts" />
 import * as Bip39 from 'bip39';
 import * as Bip44hdkey from 'hdkey';
@@ -8,32 +7,41 @@ import axios, * as others from 'axios';
 import * as Coinselect from 'coinselect';
 import * as CoinSelectSplit from 'coinselect/split';
 import {
-  Wallet, KeyPair, Address, Transaction,
+  Wallet, KeyPair, Address, Transaction, NetworkInfo
 } from './GenericSDK.d';
 import * as Networks from './networks';
 import * as ISDK from './ISDK';
 
+
 export namespace CryptoWallet.SDKS {
+
   export abstract class GenericSDK implements ISDK.CryptoWallet.SDKS.ISDK {
     bitcoinlib = Bitcoinlib;
     networks: any = Networks;
     bip39: any = Bip39;
     wif: any = Wif;
     axios: any = axios;
+    networkInfo?: NetworkInfo;
+
+    constructor(network?: NetworkInfo) {
+      if (network) { this.networkInfo = network }
+    }
+
 
     /**
      * generates an hierarchical determinitsic wallet for a given coin type
      * @param entropy
      * @param network
      */
-    generateHDWallet(entropy: string, network: string): Wallet {
+    generateHDWallet(entropy: string, net: string): Wallet {
       if (!this.bip39.validateMnemonic(entropy)) {
         throw new TypeError('Invalid entropy');
       }
-      if (!this.networks[network]) {
-        throw new TypeError('Invalid network');
-      }
-      const cointype: number = this.networks[network].bip;
+    const network: NetworkInfo = this.networkInfo ? this.networkInfo : this.networks[net];
+    if (!network) {
+      throw new Error('Invalid network');
+    }
+      const cointype: number = network.bip;
       // root of node tree
       const root = Bip44hdkey.fromMasterSeed(
         this.bip39.mnemonicToSeed(entropy),
@@ -44,11 +52,11 @@ export namespace CryptoWallet.SDKS {
       const segWitBip = 49;
       const nonSegWitBip = 44;
       // check if coin type supports segwit
-      if (this.networks[network].segwit) {
+      if (network.segwit) {
         externalNode = root.derive(`m/49'/${cointype}'/0'/0`);
         internalNode = root.derive(`m/49'/${cointype}'/0'/1`); // for change addresses
         bip = segWitBip;
-      } else if (this.networks[network].name === 'REGTEST') {
+      } else if (network.name === 'REGTEST') {
         externalNode = root.derive('m/0');
         internalNode = root.derive('m/1');
         bip = 0;
@@ -62,7 +70,7 @@ export namespace CryptoWallet.SDKS {
         ext: externalNode.toJSON(),
         int: internalNode.toJSON(),
         type: cointype,
-        network: this.networks[network],
+        network: network,
       };
 
       return wallet;
@@ -160,27 +168,30 @@ export namespace CryptoWallet.SDKS {
      */
     importWIF(
       wif: string,
-      network: string,
+      net: string,
     ): Object {
-      if (!this.networks[network].connect) {
+      const network = this.networkInfo ? this.networkInfo : this.networks[net];
+
+      if (!network || !network.connect) {
         throw new Error('Invalid network type');
       }
+
       const keyPair: Bitcoinlib.ECPair = this.bitcoinlib.ECPair.fromWIF(
         wif,
-        this.networks[network].connect,
+        network.connect,
       );
       let result: any = this.bitcoinlib.payments.p2sh({
         redeem: this.bitcoinlib.payments.p2wpkh(
           {
             pubkey: keyPair.publicKey,
-            network: this.networks[network].connect,
+            network: network.connect,
           },
         ),
-        network: this.networks[network].connect,
+        network: network.connect,
       });
-      if (!this.networks[network].segwit) {
+      if (!network.segwit) {
         result = this.bitcoinlib.payments.p2pkh({
-          pubkey: keyPair.publicKey, network: this.networks[network].connect,
+          pubkey: keyPair.publicKey, network: network.connect,
         });
       }
       const { address } = result;
@@ -197,21 +208,24 @@ export namespace CryptoWallet.SDKS {
      */
     broadcastTx(
       tx: string,
-      network: string,
+      net: string,
     ): Object {
-      if (!this.networks[network] || !this.networks[network].connect) {
+      const network = this.networkInfo ? this.networkInfo : this.networks[net];
+
+      if (!network || !network.connect) {
         throw new Error('Invalid network type');
       }
+
       return new Promise((resolve, reject) => {
-        if (this.networks[network].segwit) {
-          this.axios.post(this.networks[network].broadcastUrl, { tx_hex: tx })
+        if (network.segwit) {
+          this.axios.post(network.broadcastUrl, { tx_hex: tx })
             .then((r:any) => {
               const res = r.data.data.txid;
               return resolve(res);
             })
             .catch((e:Error) => reject(new Error('Transaction failed')));
         } else {
-          this.axios.post(`${this.networks[network].discovery}/tx/send`, { rawtx: tx })
+          this.axios.post(`${network.discovery}/tx/send`, { rawtx: tx })
             .then((r:any) => {
               const { txid } = r.data;
               return resolve(txid);
@@ -228,10 +242,12 @@ export namespace CryptoWallet.SDKS {
      */
     validateAddress(
       address: string,
-      network: string,
+      net: string,
     ): boolean {
+      const network = this.networkInfo ? this.networkInfo : this.networks[net];
+
       try {
-        this.bitcoinlib.address.toOutputScript(address, this.networks[network].connect);
+        this.bitcoinlib.address.toOutputScript(address, network.connect);
       } catch (e) {
         return false;
       }
@@ -244,13 +260,15 @@ export namespace CryptoWallet.SDKS {
      * @param network
      */
     getTransactionFee(
-      network: string,
+      net: string,
     ): Object {
-      if (!this.networks[network]) {
-        throw new Error('Invalid network');
+      const network = this.networkInfo ? this.networkInfo : this.networks[net];
+      if (!network || !network.connect) {
+        throw new Error('Invalid network type');
       }
+
       return new Promise((resolve, reject) => {
-        const URL = this.networks[network].feeApi;
+        const URL = network.feeApi;
         const kbToBytes = 1000;
         this.axios.get(URL)
           .then((r: any) => {
@@ -426,14 +444,17 @@ export namespace CryptoWallet.SDKS {
     */
     verifyTxSignature(
       transaction: any,
-      network: string,
+      net: string,
     ): boolean {
-      if (!this.networks[network] || !this.networks[network].connect) {
+      const network = this.networkInfo ? this.networkInfo : this.networks[net];
+
+      if (!network || !network.connect) {
         throw new Error('Invalid network type');
       }
+
       const keyPairs = transaction.pubKeys.map(
         (q: any) => this.bitcoinlib.ECPair.fromPublicKey(
-          Buffer.from(q, 'hex'), this.networks[network].connect,
+          Buffer.from(q, 'hex'), network.connect,
         ),
       );
       const tx = this.bitcoinlib.Transaction.fromHex(transaction.txHex);
@@ -464,7 +485,7 @@ export namespace CryptoWallet.SDKS {
       if (!wallet || !wallet.network || !wallet.network.connect) {
         throw new Error('Invalid wallet type');
       }
-      const apiUrl: string = this.networks[wallet.network.name].discovery;
+      const apiUrl: string = wallet.network.discovery;
       let usedAddresses: object[] = [];
       const usedAddressesIndex: number[] = [];
       let emptyAddresses: number[] = [];
@@ -559,19 +580,22 @@ export namespace CryptoWallet.SDKS {
      */
     getTransactionHistory(
       addresses: string[],
-      network: string,
+      net: string,
       from: number,
       to: number,
     ): Object {
-      if (!this.networks[network].connect) {
-        throw new Error(`${network} is an invalid network`);
+      const network = this.networkInfo ? this.networkInfo : this.networks[net];
+
+      if (!network || !network.connect) {
+        throw new Error('Invalid network');
       }
-      const validAddress = (address: string) => this.validateAddress(address, network);
+
+      const validAddress = (address: string) => this.validateAddress(address, net);
       if (!addresses.every(validAddress)) {
         throw new Error('Invalid address used');
       }
       return new Promise((resolve, reject) => {
-        const apiUrl: string = this.networks[network].discovery;
+        const apiUrl: string = network.discovery;
         const URL: string = `${apiUrl}/addrs/txs`;
         this.axios.post(URL, {
           addrs: addresses.toString(),
@@ -658,18 +682,21 @@ export namespace CryptoWallet.SDKS {
      * @param addresses
      * @param network
      */
-    getBalance(addresses: string[], network: string): Object {
-      if (!this.networks[network] || !this.networks[network].connect) {
-        throw new Error(`${network} is an invalid network`);
+    getBalance(addresses: string[], net: string): Object {
+      const network = this.networkInfo ? this.networkInfo : this.networks[net];
+
+      if (!network || !network.connect) {
+        throw new Error('Invalid network');
       }
-      const validAddress = (address: string) => this.validateAddress(address, network);
+
+      const validAddress = (address: string) => this.validateAddress(address, net);
       if (!addresses.every(validAddress)) {
         throw new Error('Invalid address used');
       }
 
       return new Promise((resolve, reject) => {
         let balance: number = 0;
-        const apiUrl: string = this.networks[network].discovery;
+        const apiUrl: string = network.discovery;
         const URL:string = `${apiUrl}/addrs/utxo`;
 
         this.axios.post(URL, {

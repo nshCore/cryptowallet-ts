@@ -1,4 +1,3 @@
-
 import 'jest';
 import { KeyPair } from 'src/SDKS/GenericSDK.d';
 import axios from 'axios';
@@ -14,7 +13,7 @@ const regtest = 'myth like bonus scare over problem client lizard pioneer submit
 const network = 'BITCOIN_TESTNET';
 const derPath = 'm/49\'/1\'/0\'/0/0';
 
-describe('bitcoinSDK (wallet)', () => {
+describe('genericSDK (wallet)', () => {
   describe('generateHDWallet', () => {
     it('can generate a BTC testnet HD wallet', () => {
       const wallet: any = btc.generateHDWallet(entropy, 'BITCOIN_TESTNET');
@@ -578,7 +577,7 @@ describe('bitcoinSDK (wallet)', () => {
     it('can detect if an invalid network is used', async () => {
       mockAxios.post.mockResolvedValue({ data: mockTransactionHistory });
       const addresses = ['2MyFPraHtEy2uKttPeku1wzokVeyJGTYvkf'];
-      expect(() => btc.getTransactionHistory(addresses, 'ETHEREUM', 0, 20)).toThrow('ETHEREUM is an invalid network');
+      expect(() => btc.getTransactionHistory(addresses, 'ETHEREUM', 0, 20)).toThrow('Invalid network');
     });
 
     it('can catch an API error', async () => {
@@ -621,7 +620,7 @@ describe('bitcoinSDK (wallet)', () => {
     it('can detect if an invalid network is used', async () => {
       mockAxios.post.mockResolvedValue({ data: mockTransactionHistory });
       const addresses = ['2MyFPraHtEy2uKttPeku1wzokVeyJGTYvkf'];
-      expect(() => btc.getBalance(addresses, 'ETHEREUM')).toThrow('ETHEREUM is an invalid network');
+      expect(() => btc.getBalance(addresses, 'ETHEREUM')).toThrow('Invalid network');
     });
 
     it('can catch an API error', async () => {

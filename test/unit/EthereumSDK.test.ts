@@ -1,4 +1,3 @@
-
 import 'jest';
 import axios from 'axios';
 import * as web3 from 'web3';
@@ -24,6 +23,7 @@ const mockWeb3 = {
     sendSignedTransaction: jest.fn(),
   },
 };
+jestWeb3.utils = { isAddress: jest.fn() },
 jestWeb3.mockImplementation(() => mockWeb3);
 
 const eth: any = CryptoWallet.createSDK('Ethereum');
@@ -59,7 +59,7 @@ describe('ethereumSDK (wallet)', () => {
 
   describe('validateAddress', () => {
     it('can generate an ethereum testnet address', () => {
-      mockWeb3.utils.isAddress.mockImplementationOnce(() => true);
+      jestWeb3.utils.isAddress.mockImplementationOnce(() => true);
       const valid = eth.validateAddress('0x8f97Bb9335747E4fCdDA8680F66ed96DcBe27F49', network);
       expect(valid).toBe(true);
     });
